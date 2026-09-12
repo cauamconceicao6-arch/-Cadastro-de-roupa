@@ -1,0 +1,20 @@
+{
+    "name": "senai/cadastro-de-roupas",
+    "description": "API REST para cadastro de roupas",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Controller\\": "Controller/",
+            "Model\\": "Model/"
+        },
+        "files": [
+            "Config/Configuration.php"
+        ]
+    },
+    "require": {
+        "php": ">=8.3",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*",
+        "vlucas/phpdotenv": "^5.6"
+    }
+}
