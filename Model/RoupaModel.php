@@ -31,20 +31,26 @@ class RoupaModel
 
     public function create(array $data): bool
     {
-        $stmt = $this->conn->prepare("INSERT INTO roupas (nome, tamanho, preco) VALUES (:nome, :tamanho, :preco)");
+        $stmt = $this->conn->prepare("INSERT INTO roupas (nome, categoria, tamanho, cor, preco, quantidade) VALUES (:nome, :categoria, :tamanho, :cor, :preco, :quantidade)");
         $stmt->bindValue(':nome', $data['nome']);
+        $stmt->bindValue(':categoria', $data['categoria']);
         $stmt->bindValue(':tamanho', $data['tamanho']);
+        $stmt->bindValue(':cor', $data['cor']);
         $stmt->bindValue(':preco', $data['preco']);
+        $stmt->bindValue(':quantidade', $data['quantidade']);
         return $stmt->execute();
     }
 
     public function update(int $id, array $data): bool
     {
-        $stmt = $this->conn->prepare("UPDATE roupas SET nome = :nome, tamanho = :tamanho, preco = :preco WHERE id = :id");
+        $stmt = $this->conn->prepare("UPDATE roupas SET nome = :nome, categoria = :categoria, tamanho = :tamanho, cor = :cor, preco = :preco, quantidade = :quantidade WHERE id = :id");
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         $stmt->bindValue(':nome', $data['nome']);
+        $stmt->bindValue(':categoria', $data['categoria']);
         $stmt->bindValue(':tamanho', $data['tamanho']);
+        $stmt->bindValue(':cor', $data['cor']);
         $stmt->bindValue(':preco', $data['preco']);
+        $stmt->bindValue(':quantidade', $data['quantidade']);
         return $stmt->execute();
     }
 

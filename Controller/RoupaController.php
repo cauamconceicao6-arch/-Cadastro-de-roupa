@@ -30,7 +30,9 @@ class RoupaController
                 $this->createRoupa();
                 break;
 
+
             case 'PUT':
+             case 'PATCH':   
                 if ($id) {
                     $this->updateRoupa($id);
                 } else {

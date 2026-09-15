@@ -1,11 +1,5 @@
 <?php
 
-// 1. Exibir erros para depuração durante o desenvolvimento
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-
 require_once __DIR__ . '/vendor/autoload.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -27,7 +21,6 @@ if (empty($parts[0]) || $parts[0] !== 'roupas') {
     echo json_encode(["error" => "Rota desconhecida!"]);
     exit;
 }
-
 
 $id = isset($parts[1]) && is_numeric($parts[1]) ? (int) $parts[1] : null;
 
