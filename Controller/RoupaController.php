@@ -3,7 +3,10 @@
 namespace Controller;
 
 use Model\RoupaModel;
+use OpenApi\Attributes as OA;
 
+#[OA\Info(title: "API Cadastro de Roupa", version: "1.0.0")]
+#[OA\Server(url: "http://localhost:8000")]
 class RoupaController
 {
     private RoupaModel $model;
@@ -30,9 +33,8 @@ class RoupaController
                 $this->createRoupa();
                 break;
 
-
             case 'PUT':
-             case 'PATCH':   
+            case 'PATCH':
                 if ($id) {
                     $this->updateRoupa($id);
                 } else {
@@ -57,6 +59,13 @@ class RoupaController
         }
     }
 
+    #[OA\Get(
+        path: "/roupas",
+        summary: "Lista todas as roupas",
+        responses: [
+            new OA\Response(response: 200, description: "Lista retornada com sucesso")
+        ]
+    )]
     private function getAllRoupas(): void
     {
         $roupas = $this->model->readAllRoupas();
@@ -64,6 +73,17 @@ class RoupaController
         echo json_encode($roupas);
     }
 
+    #[OA\Get(
+        path: "/roupas/{id}",
+        summary: "Busca roupa por ID",
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Roupa encontrada"),
+            new OA\Response(response: 404, description: "Roupa não encontrada")
+        ]
+    )]
     private function getRoupaById(int $id): void
     {
         $roupa = $this->model->readById($id);
@@ -77,6 +97,27 @@ class RoupaController
         echo json_encode($roupa);
     }
 
+    #[OA\Post(
+        path: "/roupas",
+        summary: "Cadastra uma nova roupa",
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "nome", type: "string"),
+                    new OA\Property(property: "categoria", type: "string"),
+                    new OA\Property(property: "tamanho", type: "string"),
+                    new OA\Property(property: "cor", type: "string"),
+                    new OA\Property(property: "preco", type: "number"),
+                    new OA\Property(property: "quantidade", type: "integer")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: "Roupa cadastrada com sucesso"),
+            new OA\Response(response: 400, description: "Campos obrigatórios ausentes")
+        ]
+    )]
     private function createRoupa(): void
     {
         $data = json_decode(file_get_contents("php://input"), true);
@@ -98,6 +139,17 @@ class RoupaController
         }
     }
 
+    #[OA\Put(
+        path: "/roupas/{id}",
+        summary: "Atualiza uma roupa existente",
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Roupa atualizada com sucesso"),
+            new OA\Response(response: 404, description: "Roupa não encontrada")
+        ]
+    )]
     private function updateRoupa(int $id): void
     {
         $data = json_decode(file_get_contents("php://input"), true);
@@ -125,6 +177,17 @@ class RoupaController
         }
     }
 
+    #[OA\Delete(
+        path: "/roupas/{id}",
+        summary: "Remove uma roupa",
+        parameters: [
+            new OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(response: 200, description: "Roupa removida com sucesso"),
+            new OA\Response(response: 404, description: "Roupa não encontrada")
+        ]
+    )]
     private function deleteRoupa(int $id): void
     {
         if (!$this->model->readById($id)) {
