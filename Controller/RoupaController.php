@@ -3,236 +3,142 @@
 namespace Controller;
 
 use Model\RoupaModel;
-use Exception;
 
 class RoupaController
 {
-    private RoupaModel $roupaModel;
+    private RoupaModel $model;
 
-    public function __construct(RoupaModel $roupaModel)
+    public function __construct()
     {
-        $this->roupaModel = $roupaModel;
+        $this->model = new RoupaModel();
     }
 
-    public function processRequest(string $method, ?string $id): void
+    public function processRequest(string $method, ?int $id = null): void
     {
         header("Content-Type: application/json; charset=UTF-8");
 
-        if ($id === null) {
-            switch ($method) {
-                case "GET":
-                    $this->index();
-                    break;
-                case "POST":
-                    $this->create();
-                    break;
-                default:
-                    $this->methodNotAllowed(["GET", "POST"]);
-            }
-            return;
-        }
-
         switch ($method) {
-            case "GET":
-                $this->show((int) $id);
+            case 'GET':
+                if ($id) {
+                    $this->getRoupaById($id);
+                } else {
+                    $this->getAllRoupas();
+                }
                 break;
-            case "PATCH":
-            case "PUT":
-                $this->update((int) $id);
+
+            case 'POST':
+                $this->createRoupa();
                 break;
-            case "DELETE":
-                $this->delete((int) $id);
+
+            case 'PUT':
+                if ($id) {
+                    $this->updateRoupa($id);
+                } else {
+                    http_response_code(400);
+                    echo json_encode(["error" => "ID é necessário para atualização."]);
+                }
                 break;
+
+            case 'DELETE':
+                if ($id) {
+                    $this->deleteRoupa($id);
+                } else {
+                    http_response_code(400);
+                    echo json_encode(["error" => "ID é necessário para remoção."]);
+                }
+                break;
+
             default:
-                $this->methodNotAllowed(["GET", "PATCH", "PUT", "DELETE"]);
+                http_response_code(455);
+                echo json_encode(["error" => "Método HTTP não permitido."]);
+                break;
         }
     }
 
-    // LISTAR (GET /roupas)
-    private function index(): void
+    private function getAllRoupas(): void
     {
-        try {
-            $roupas = $this->roupaModel->readAllRoupas();
-            http_response_code(200);
-            echo json_encode($roupas);
-        } catch (Exception $error) {
-            http_response_code(500);
-            echo json_encode(["error" => $error->getMessage()]);
-        }
+        $roupas = $this->model->readAllRoupas();
+        http_response_code(200);
+        echo json_encode($roupas);
     }
 
-    // CADASTRAR (POST /roupas)
-    private function create(): void
+    private function getRoupaById(int $id): void
     {
-        $data = $this->readInput();
-        $errors = $this->validate($data);
-
-        if (!empty($errors)) {
-            http_response_code(422);
-            echo json_encode(["errors" => $errors]);
+        $roupa = $this->model->readById($id);
+        if (!$roupa) {
+            http_response_code(404);
+            echo json_encode(["error" => "Roupa não encontrada."]);
             return;
         }
 
-        try {
-            $id = $this->roupaModel->createRoupa(
-                $data["nome"],
-                $data["categoria"],
-                $data["tamanho"],
-                $data["cor"],
-                (float) $data["preco"],
-                (int) $data["quantidade"]
-            );
+        http_response_code(200);
+        echo json_encode($roupa);
+    }
 
-            $roupa = $this->roupaModel->readRoupa($id);
+    private function createRoupa(): void
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (empty($data['nome']) || empty($data['tamanho']) || !isset($data['preco'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Campos 'nome', 'tamanho' e 'preco' são obrigatórios."]);
+            return;
+        }
+
+        $success = $this->model->create($data);
+
+        if ($success) {
             http_response_code(201);
-            echo json_encode($roupa);
-        } catch (Exception $error) {
+            echo json_encode(["message" => "Roupa cadastrada com sucesso."]);
+        } else {
             http_response_code(500);
-            echo json_encode(["error" => $error->getMessage()]);
+            echo json_encode(["error" => "Falha ao cadastrar roupa."]);
         }
     }
 
-    // BUSCAR POR ID (GET /roupas/{id})
-    private function show(int $id): void
+    private function updateRoupa(int $id): void
     {
-        try {
-            $roupa = $this->roupaModel->readRoupa($id);
+        $data = json_decode(file_get_contents("php://input"), true);
 
-            if ($roupa === null) {
-                http_response_code(404);
-                echo json_encode(["error" => "Roupa não encontrada!"]);
-                return;
-            }
+        if (!$this->model->readById($id)) {
+            http_response_code(404);
+            echo json_encode(["error" => "Roupa não encontrada."]);
+            return;
+        }
 
+        if (empty($data['nome']) || empty($data['tamanho']) || !isset($data['preco'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Campos 'nome', 'tamanho' e 'preco' são obrigatórios."]);
+            return;
+        }
+
+        $success = $this->model->update($id, $data);
+
+        if ($success) {
             http_response_code(200);
-            echo json_encode($roupa);
-        } catch (Exception $error) {
+            echo json_encode(["message" => "Roupa atualizada com sucesso."]);
+        } else {
             http_response_code(500);
-            echo json_encode(["error" => $error->getMessage()]);
+            echo json_encode(["error" => "Falha ao atualizar roupa."]);
         }
     }
 
-    // ATUALIZAR (PUT/PATCH /roupas/{id})
-    private function update(int $id): void
+    private function deleteRoupa(int $id): void
     {
-        try {
-            $roupa = $this->roupaModel->readRoupa($id);
+        if (!$this->model->readById($id)) {
+            http_response_code(404);
+            echo json_encode(["error" => "Roupa não encontrada."]);
+            return;
+        }
 
-            if ($roupa === null) {
-                http_response_code(404);
-                echo json_encode(["error" => "Roupa não encontrada!"]);
-                return;
-            }
+        $success = $this->model->delete($id);
 
-            $data = $this->readInput();
-
-            $nome = $data["nome"] ?? $roupa["nome"];
-            $categoria = $data["categoria"] ?? $roupa["categoria"];
-            $tamanho = $data["tamanho"] ?? $roupa["tamanho"];
-            $cor = $data["cor"] ?? $roupa["cor"];
-            $preco = $data["preco"] ?? $roupa["preco"];
-            $quantidade = $data["quantidade"] ?? $roupa["quantidade"];
-
-            $errors = $this->validate([
-                "nome" => $nome,
-                "categoria" => $categoria,
-                "tamanho" => $tamanho,
-                "cor" => $cor,
-                "preco" => $preco,
-                "quantidade" => $quantidade
-            ]);
-
-            if (!empty($errors)) {
-                http_response_code(422);
-                echo json_encode(["errors" => $errors]);
-                return;
-            }
-
-            $this->roupaModel->updateRoupa(
-                $id,
-                $nome,
-                $categoria,
-                $tamanho,
-                $cor,
-                (float) $preco,
-                (int) $quantidade
-            );
-
-            $updated = $this->roupaModel->readRoupa($id);
+        if ($success) {
             http_response_code(200);
-            echo json_encode($updated);
-        } catch (Exception $error) {
+            echo json_encode(["message" => "Roupa removida com sucesso."]);
+        } else {
             http_response_code(500);
-            echo json_encode(["error" => $error->getMessage()]);
+            echo json_encode(["error" => "Falha ao remover roupa."]);
         }
-    }
-
-    // EXCLUIR (DELETE /roupas/{id})
-    private function delete(int $id): void
-    {
-        try {
-            $roupa = $this->roupaModel->readRoupa($id);
-
-            if ($roupa === null) {
-                http_response_code(404);
-                echo json_encode(["error" => "Roupa não encontrada!"]);
-                return;
-            }
-
-            $this->roupaModel->deleteRoupa($id);
-            http_response_code(204);
-        } catch (Exception $error) {
-            http_response_code(500);
-            echo json_encode(["error" => $error->getMessage()]);
-        }
-    }
-
-    // LER BODY JSON
-    private function readInput(): array
-    {
-        $body = file_get_contents("php://input");
-        $data = json_decode($body, true);
-
-        return is_array($data) ? $data : [];
-    }
-
-    // VALIDAÇÃO DE CAMPOS
-    private function validate(array $data): array
-    {
-        $errors = [];
-
-        if (empty($data["nome"])) {
-            $errors[] = "O campo 'nome' é obrigatório.";
-        }
-
-        if (empty($data["categoria"])) {
-            $errors[] = "O campo 'categoria' é obrigatório.";
-        }
-
-        if (empty($data["tamanho"])) {
-            $errors[] = "O campo 'tamanho' é obrigatório.";
-        }
-
-        if (empty($data["cor"])) {
-            $errors[] = "O campo 'cor' é obrigatório.";
-        }
-
-        if (!isset($data["preco"]) || !is_numeric($data["preco"])) {
-            $errors[] = "O campo 'preco' deve ser numérico.";
-        }
-
-        if (!isset($data["quantidade"]) || !is_numeric($data["quantidade"]) || (int) $data["quantidade"] < 0) {
-            $errors[] = "O campo 'quantidade' deve ser um número maior ou igual a zero.";
-        }
-
-        return $errors;
-    }
-
-    // MÉTODOS NÃO PERMITIDOS
-    private function methodNotAllowed(array $allowed): void
-    {
-        header("Allow: " . implode(", ", $allowed));
-        http_response_code(405);
-        echo json_encode(["error" => "Método não permitido."]);
     }
 }

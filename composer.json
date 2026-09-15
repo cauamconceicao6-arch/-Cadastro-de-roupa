@@ -4,6 +4,7 @@
     "type": "project",
     "autoload": {
         "psr-4": {
+            "Config\\": "Config/",
             "Controller\\": "Controller/",
             "Model\\": "Model/"
         },

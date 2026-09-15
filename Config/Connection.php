@@ -1,6 +1,6 @@
 <?php
 
-namespace Model;
+namespace Config;
 
 require_once __DIR__ . "/../Config/Configuration.php";
 
@@ -22,7 +22,6 @@ class Connection
                     ";port=" . DB_PORT .
                     ";dbname=" . DB_NAME .
                     ";sslmode=require",
-
                     DB_USER,
                     DB_PASSWORD
                 );
@@ -42,7 +41,7 @@ class Connection
                 http_response_code(500);
 
                 echo json_encode([
-                    "error" => "Erro ao conectar com o banco de dados."
+                    "error" => "Erro de Conexão: " . $error->getMessage()
                 ]);
 
                 exit;

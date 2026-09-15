@@ -1,4 +1,5 @@
 <?php
+
 namespace Model;
 
 use Config\Connection;
@@ -6,26 +7,51 @@ use PDO;
 
 class RoupaModel 
 {
-    private $conn;
+    private PDO $conn;
 
     public function __construct() 
     {
         $this->conn = Connection::getInstance();
     }
 
-    public function getAll() 
+    public function readAllRoupas(): array
     {
         $stmt = $this->conn->prepare("SELECT * FROM roupas");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function create($data) 
+    public function readById(int $id): array|false
+    {
+        $stmt = $this->conn->prepare("SELECT * FROM roupas WHERE id = :id");
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function create(array $data): bool
     {
         $stmt = $this->conn->prepare("INSERT INTO roupas (nome, tamanho, preco) VALUES (:nome, :tamanho, :preco)");
         $stmt->bindValue(':nome', $data['nome']);
         $stmt->bindValue(':tamanho', $data['tamanho']);
         $stmt->bindValue(':preco', $data['preco']);
+        return $stmt->execute();
+    }
+
+    public function update(int $id, array $data): bool
+    {
+        $stmt = $this->conn->prepare("UPDATE roupas SET nome = :nome, tamanho = :tamanho, preco = :preco WHERE id = :id");
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->bindValue(':nome', $data['nome']);
+        $stmt->bindValue(':tamanho', $data['tamanho']);
+        $stmt->bindValue(':preco', $data['preco']);
+        return $stmt->execute();
+    }
+
+    public function delete(int $id): bool
+    {
+        $stmt = $this->conn->prepare("DELETE FROM roupas WHERE id = :id");
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
 }

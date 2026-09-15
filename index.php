@@ -1,62 +1,35 @@
 <?php
 
-require_once "vendor/autoload.php";
+// 1. Exibir erros para depuração durante o desenvolvimento
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-use Model\RoupaModel;
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+require_once __DIR__ . '/Config/Configuration.php';
+
 use Controller\RoupaController;
 
+$method = $_SERVER['REQUEST_METHOD'];
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-$path = parse_url(
-    $_SERVER["REQUEST_URI"],
-    PHP_URL_PATH
-);
+$path = str_replace('/index.php', '', $path);
+$parts = explode('/', trim($path, '/'));
 
-
-$parts = explode("/", trim($path, "/"));
-
-
-$resource = $parts[1] ?? null;
-
-$id = $parts[2] ?? null;
-
-
-header(
-    "Content-Type: application/json; charset=UTF-8"
-);
-
-
-if ($resource !== "roupas") {
-
+if (empty($parts[0]) || $parts[0] !== 'roupas') {
+    header("Content-Type: application/json; charset=UTF-8");
     http_response_code(404);
-
-    echo json_encode([
-        "error" => "Rota desconhecida!"
-    ]);
-
+    echo json_encode(["error" => "Rota desconhecida!"]);
     exit;
 }
 
 
-try {
+$id = isset($parts[1]) && is_numeric($parts[1]) ? (int) $parts[1] : null;
 
-    $roupaModel = new RoupaModel();
-
-    $roupaController =
-        new RoupaController($roupaModel);
-
-
-    $roupaController->ProcessRequest(
-        $_SERVER["REQUEST_METHOD"],
-        $id
-    );
-
-} catch (\Throwable $error) {
-
-    error_log($error->getMessage());
-
-    http_response_code(500);
-
-    echo json_encode([
-        "error" => "Erro interno do servidor."
-    ]);
-}
+$controller = new RoupaController();
+$controller->processRequest($method, $id);
